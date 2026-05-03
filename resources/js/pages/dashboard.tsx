@@ -1,25 +1,60 @@
-import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { Head, usePage } from '@inertiajs/react';
 import { dashboard } from '@/routes';
+import type { Auth } from '@/types/auth';
 
 export default function Dashboard() {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const { user } = auth;
+
     return (
         <>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+            <div className="flex flex-1 flex-col gap-6 p-6">
+                <div>
+                    <h1 className="text-2xl font-bold">
+                        Welcome back, {user.username}
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Here&apos;s an overview of your points and activity.
+                    </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                        <p className="text-sm font-medium text-muted-foreground">
+                            Total Points
+                        </p>
+                        <p className="mt-1 text-4xl font-bold text-foreground">
+                            {user.points.toLocaleString()}
+                        </p>
                     </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+                    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                        <p className="text-sm font-medium text-muted-foreground">
+                            Rank
+                        </p>
+                        <p className="mt-1 text-4xl font-bold text-foreground">
+                            &mdash;
+                        </p>
                     </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+                    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                        <p className="text-sm font-medium text-muted-foreground">
+                            Rewards Unlocked
+                        </p>
+                        <p className="mt-1 text-4xl font-bold text-foreground">
+                            0
+                        </p>
                     </div>
                 </div>
-                <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                    <h2 className="mb-4 text-base font-semibold">
+                        Recent Activity
+                    </h2>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            No activity yet. Start earning points!
+                        </p>
+                    </div>
                 </div>
             </div>
         </>
