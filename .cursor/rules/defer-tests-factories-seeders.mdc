@@ -1,0 +1,16 @@
+---
+description: Do not add tests, factories, or seeders unless the user explicitly asks
+alwaysApply: true
+---
+
+# Defer tests, factories, and seeders
+
+Unless the user **explicitly** asks for them in the same message or follow-up:
+
+- Do **not** create or edit **Pest/PHPUnit tests** (`tests/**`, `php artisan make:test`, etc.).
+- Do **not** create or edit **model factories** (`database/factories/**`).
+- Do **not** create or edit **database seeders** (`database/seeders/**`).
+
+Focus on application code (routes, controllers, models, migrations, frontend, config) only. If tests or factories would normally be expected for a change, skip them until the user says to add them.
+
+**Exception:** If the user’s message clearly requests tests, factories, or seeders (e.g. “add a test”, “factory for X”, “seed Y”), implement those as asked.

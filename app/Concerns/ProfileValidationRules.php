@@ -21,6 +21,27 @@ trait ProfileValidationRules
     }
 
     /**
+     * Get the validation rules used during registration (profile + extra required fields).
+     *
+     * @return array<string, array<int, ValidationRule|array<mixed>|string>>
+     */
+    protected function registrationProfileRules(): array
+    {
+        return [
+            'username' => $this->usernameRules(),
+            'city' => ['required', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]{7,10}$/'],
+            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
+            'birthdate' => [
+                'required',
+                'date',
+                'before_or_equal:'.now()->subYears(18)->toDateString(),
+                'after_or_equal:'.now()->subYears(30)->toDateString(),
+            ],
+        ];
+    }
+
+    /**
      * Get the validation rules used to validate usernames.
      *
      * @return array<int, ValidationRule|array<mixed>|string>

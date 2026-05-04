@@ -25,14 +25,6 @@ const normalizeAppearance = (value: string | null): Appearance => {
     return value === 'dark' ? 'dark' : 'light';
 };
 
-const getStoredAppearance = (): Appearance => {
-    if (typeof window === 'undefined') {
-        return 'light';
-    }
-
-    return normalizeAppearance(localStorage.getItem('appearance'));
-};
-
 const isDarkMode = (appearance: Appearance): boolean => {
     return appearance === 'dark';
 };
@@ -62,9 +54,12 @@ export function initializeTheme(): void {
     }
 
     const raw = localStorage.getItem('appearance');
-    currentAppearance = getStoredAppearance();
-
-    if (raw !== currentAppearance) {
+    if (raw === 'dark' || raw === 'light') {
+        currentAppearance = normalizeAppearance(raw);
+    } else {
+        currentAppearance = document.documentElement.classList.contains('dark')
+            ? 'dark'
+            : 'light';
         localStorage.setItem('appearance', currentAppearance);
         setCookie('appearance', currentAppearance);
     }

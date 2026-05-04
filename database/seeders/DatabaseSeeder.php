@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Initiative;
+use App\Models\Reward;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $admin = User::factory()->admin()->create([
+            'username' => 'admin',
+            'password' => Hash::make('Qw12as34zx56?'),
+            'points' => 0,
         ]);
+
+        $users = User::factory(20)->create();
+
+        $allUsers = $users->push($admin);
+
+        Initiative::factory(15)->approved()->recycle($allUsers)->create();
+        Initiative::factory(15)->recycle($allUsers)->create();
+
+        Reward::factory(10)->create();
     }
 }

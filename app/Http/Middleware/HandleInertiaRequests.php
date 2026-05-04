@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Laravel\Fortify\Features;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -38,9 +39,12 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'appearance' => $request->cookie('appearance') === 'dark' ? 'dark' : 'light',
             'auth' => [
                 'user' => $request->user(),
+                'isAdmin' => $request->user()?->role === 'admin',
             ],
+            'canRegister' => Features::enabled(Features::registration()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

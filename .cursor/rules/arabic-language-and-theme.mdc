@@ -1,0 +1,46 @@
+---
+description: Always respond in Arabic and apply the app's forest/emerald green theme in UI suggestions
+alwaysApply: true
+---
+
+# اللغة والثيم
+
+## اللغة
+
+- تواصل دائمًا مع المستخدم **باللغة العربية** في جميع الردود والشروحات والتعليقات.
+- استخدم المصطلحات التقنية الشائعة (مثل: كومبوننت، كونترولر، مايجريشن) عند الحاجة، مع توضيحها بالعربية عند الضرورة.
+
+## ثيم التطبيق
+
+الثيم الأساسي للتطبيق هو **أخضر غابي/زمردي** مع حياد يميل للأخضر البارد. استخدم متغيرات CSS التالية عند بناء أو اقتراح واجهات:
+
+```
+--primary:            hsl(152 58% 36%)   /* أخضر غابي رئيسي */
+--secondary:          hsl(152 28% 92%)   /* ثانوي فاتح */
+--accent:             hsl(148 38% 91%)   /* تمييز ناعم */
+--background:         hsl(150 20% 98%)   /* خلفية فاتحة */
+--foreground:         hsl(160 28% 12%)   /* نص داكن */
+--muted-foreground:   hsl(160 12% 38%)   /* نص خافت */
+--border:             hsl(150 16% 88%)   /* حدود */
+--initiative:         hsl(152 58% 36%)   /* لون المبادرة */
+--initiative-highlight: hsl(95 42% 44%) /* تمييز المبادرة */
+```
+
+### في Tailwind
+
+استخدم فئات الثيم المتاحة بدلًا من الألوان الاعتباطية:
+
+```tsx
+// ✅ صحيح
+<button className="bg-primary text-primary-foreground hover:bg-primary/90">
+<div className="bg-card border-border text-foreground">
+<span className="text-muted-foreground">
+
+// ❌ خطأ
+<button className="bg-green-600 text-white">
+<div className="bg-white border-gray-200">
+```
+
+### الوضع الليلي
+
+الثيم يدعم الوضع الليلي تلقائيًا عبر `.dark`. لا تحتاج لتعريف ألوان يدوية للوضع الليلي.

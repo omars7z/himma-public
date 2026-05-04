@@ -1,5 +1,9 @@
+@php
+    $locale = str_replace('_', '-', app()->getLocale());
+    $isRtl = in_array(app()->getLocale(), ['ar', 'fa', 'he', 'ur'], true);
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'light') == 'dark'])>
+<html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}" @class(['dark' => ($appearance ?? 'light') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
