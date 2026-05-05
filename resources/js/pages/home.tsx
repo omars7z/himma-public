@@ -5,6 +5,7 @@ import {
     CalendarDays,
     ChevronDown,
     Gift,
+    Flame,
     HandHeart,
     LogIn,
     MapPin,
@@ -58,6 +59,52 @@ type FeaturedInitiative = {
 
 type GenderFilter = 'all' | 'male' | 'female';
 type AgeFilter = 'all' | '13' | '18' | '25';
+
+type TrendingInitiative = {
+    id: string;
+    title: string;
+    city: string;
+    category: string;
+    growth: string;
+};
+
+const TRENDING_INITIATIVES: TrendingInitiative[] = [
+    {
+        id: 't1',
+        title: 'تنظيف أحياء وسط عمّان',
+        city: 'عمّان',
+        category: 'بيئي',
+        growth: '+32%',
+    },
+    {
+        id: 't2',
+        title: 'تعليم مهارات رقمية للشباب',
+        city: 'إربد',
+        category: 'تعليمي',
+        growth: '+27%',
+    },
+    {
+        id: 't3',
+        title: 'حملات تبرع بالدم الجامعية',
+        city: 'الزرقاء',
+        category: 'صحي',
+        growth: '+24%',
+    },
+    {
+        id: 't4',
+        title: 'دعم الأسر المنتجة محليًا',
+        city: 'الكرك',
+        category: 'مجتمعي',
+        growth: '+19%',
+    },
+    {
+        id: 't5',
+        title: 'تشجير المدارس والمساحات العامة',
+        city: 'العقبة',
+        category: 'استدامة',
+        growth: '+16%',
+    },
+];
 
 type Stats = {
     initiatives_count: number;
@@ -180,6 +227,17 @@ function Hero({
 }) {
     return (
         <section className="relative overflow-hidden border-b border-border bg-linear-to-b from-initiative-surface/80 via-background to-background">
+            <div className="pointer-events-none absolute inset-0">
+                <img
+                    src="https://images.unsplash.com/photo-1469571486292-b53601020f10?auto=format&fit=crop&w=1600&q=80"
+                    alt=""
+                    className="h-full w-full object-cover opacity-20"
+                />
+            </div>
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-background/55"
+            />
             <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--initiative-highlight)/0.18),transparent_60%),radial-gradient(ellipse_at_bottom_left,hsl(var(--primary)/0.16),transparent_55%)]"
@@ -382,6 +440,10 @@ return [];
                 latitude: i.latitude,
                 longitude: i.longitude,
                 is_joined: i.is_joined,
+                full:
+                    i.max_participants !== null &&
+                    i.max_participants > 0 &&
+                    i.participants_count >= i.max_participants,
             })),
         [filteredInitiatives],
     );
@@ -557,32 +619,39 @@ return;
                 </div>
 
                 {/* الخريطة + اللوحة الجانبية */}
-                <div className="flex h-[600px] overflow-hidden rounded-2xl border border-border shadow-md">
-                    {/* اللوحة الجانبية — تظهر على اليمين في RTL */}
+                <div className="flex h-150 overflow-hidden rounded-2xl border border-border shadow-md">
+                    {/* اللوحة اليسرى — قائمة ترند (Mock Data) */}
                     <div className="w-80 shrink-0 overflow-y-auto border-e border-border bg-card xl:w-96">
-                        <InitiativesPanel
-                            selectedCity={selectedCity}
-                            cityInitiatives={cityInitiatives}
-                            selectedInitiative={selectedInitiative}
-                            onInitiativeSelect={handleInitiativeSelect}
-                            onBack={handleBack}
-                            joinConfirming={joinConfirming}
-                            onJoinConfirm={() =>
-                                selectedInitiative &&
-                                handleJoin(selectedInitiative.id)
-                            }
-                            onJoinRequest={() => setJoinConfirming(true)}
-                            onJoinCancel={() => setJoinConfirming(false)}
-                            onLeave={() =>
-                                selectedInitiative &&
-                                handleLeave(selectedInitiative.id)
-                            }
-                            withdrawalPenaltyPoints={withdrawalPenaltyPoints}
-                            isAuthed={isAuthed}
-                            canRegister={canRegister}
-                            processing={processing}
-                        />
+                        <TrendingInitiativesPanel />
                     </div>
+
+                    {/* اللوحة الوسطية للمحافظة/المبادرة (تظهر فقط بعد اختيار دبوس) */}
+                    {selectedCity ? (
+                        <div className="w-80 shrink-0 overflow-y-auto border-e border-border bg-card xl:w-96">
+                            <InitiativesPanel
+                                selectedCity={selectedCity}
+                                cityInitiatives={cityInitiatives}
+                                selectedInitiative={selectedInitiative}
+                                onInitiativeSelect={handleInitiativeSelect}
+                                onBack={handleBack}
+                                joinConfirming={joinConfirming}
+                                onJoinConfirm={() =>
+                                    selectedInitiative &&
+                                    handleJoin(selectedInitiative.id)
+                                }
+                                onJoinRequest={() => setJoinConfirming(true)}
+                                onJoinCancel={() => setJoinConfirming(false)}
+                                onLeave={() =>
+                                    selectedInitiative &&
+                                    handleLeave(selectedInitiative.id)
+                                }
+                                withdrawalPenaltyPoints={withdrawalPenaltyPoints}
+                                isAuthed={isAuthed}
+                                canRegister={canRegister}
+                                processing={processing}
+                            />
+                        </div>
+                    ) : null}
 
                     {/* الخريطة */}
                     <div className="min-w-0 flex-1">
@@ -625,6 +694,47 @@ return;
     );
 }
 
+function TrendingInitiativesPanel() {
+    return (
+        <div className="flex h-full flex-col">
+            <div className="border-b border-border bg-primary/5 px-4 py-3">
+                <div className="flex items-center gap-2">
+                    <Flame className="size-4 text-primary" />
+                    <span className="text-sm font-bold text-foreground">
+                        المبادرات الأكثر رواجًا
+                    </span>
+                    <span className="mr-auto rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                        Top 5
+                    </span>
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                    بيانات تجريبية لعرض الترند.
+                </p>
+            </div>
+
+            <ul className="divide-y divide-border">
+                {TRENDING_INITIATIVES.map((item, index) => (
+                    <li key={item.id} className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                    {index + 1}. {item.title}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {item.city} · {item.category}
+                                </p>
+                            </div>
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                                {item.growth}
+                            </span>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 function InitiativesPanel({
     selectedCity,
     cityInitiatives,
@@ -656,21 +766,7 @@ function InitiativesPanel({
     canRegister: boolean;
     processing: boolean;
 }) {
-    if (!selectedCity) {
-        return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                <span className="grid size-14 place-items-center rounded-2xl bg-muted text-muted-foreground">
-                    <MapPin className="size-6" />
-                </span>
-                <p className="text-sm font-semibold text-foreground">
-                    اختر محافظة
-                </p>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                    انقر على أي دبوس في الخريطة لاستعراض مبادراتها
-                </p>
-            </div>
-        );
-    }
+    if (!selectedCity) return null;
 
     const cityLabel =
         JORDAN_CITIES.find((c) => c.value === selectedCity)?.label ??

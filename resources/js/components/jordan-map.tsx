@@ -31,6 +31,7 @@ export type InitiativePin = {
     latitude: number | null;
     longitude: number | null;
     is_joined: boolean;
+    full?: boolean;
 };
 
 type Props = {
@@ -57,33 +58,24 @@ function BoundsController() {
 
 /** دبوس المحافظة — شكل دبوس مع عدد المبادرات */
 function makeCityIcon(count: number, isSelected: boolean) {
-    const fill = isSelected ? '#1a7a4a' : '#2d9c62';
-    const stroke = isSelected ? '#0f4d2e' : '#1a7a4a';
-    const w = isSelected ? 36 : 28;
-    const h = isSelected ? 48 : 38;
-    const fs = count > 9 ? 9 : 11;
-    const glow = isSelected
-        ? 'filter:drop-shadow(0 0 7px rgba(45,156,98,.6)) drop-shadow(0 3px 6px rgba(0,0,0,.4));'
-        : 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));';
+    const classes = ['map-pin-icon', 'city-pin'];
+
+    if (isSelected) {
+        classes.push('selected');
+    }
 
     const html = `
-        <div style="${glow}transition:all .18s ease;cursor:pointer;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 28 38">
-                <path d="M14 0C7.925 0 3 4.925 3 11c0 8.25 11 27 11 27S25 19.25 25 11C25 4.925 20.075 0 14 0z"
-                      fill="${fill}" stroke="${stroke}" stroke-width="1.6"/>
-                <circle cx="14" cy="11" r="6" fill="rgba(0,0,0,.2)"/>
-                <text x="14" y="15" text-anchor="middle"
-                      font-size="${fs}" font-weight="700"
-                      font-family="system-ui,sans-serif" fill="#fff">${count}</text>
-            </svg>
+        <div class="${classes.join(' ')}">
+            <div class="map-pin-dot"></div>
+            <div class="map-pin-count">${count}</div>
         </div>
     `;
 
     return L.divIcon({
         html,
         className: '',
-        iconSize: [w, h],
-        iconAnchor: [w / 2, h],
+        iconSize: [38, 48],
+        iconAnchor: [19, 48],
     });
 }
 
@@ -106,31 +98,19 @@ function makeEmptyCityIcon() {
 }
 
 /** دبوس المبادرة الفردية */
-function makeInitiativeIcon(isSelected: boolean, isJoined: boolean) {
-    const fill = isJoined ? '#1a7a4a' : '#fff';
-    const stroke = isSelected ? '#0f4d2e' : isJoined ? '#1a7a4a' : '#2d9c62';
-    const dotFill = isJoined ? '#fff' : '#2d9c62';
-    const w = isSelected ? 28 : 22;
-    const h = isSelected ? 38 : 30;
-    const glow = isSelected
-        ? 'filter:drop-shadow(0 0 5px rgba(45,156,98,.55)) drop-shadow(0 2px 5px rgba(0,0,0,.4));'
-        : 'filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));';
-
+function makeInitiativeIcon(isFull: boolean) {
     const html = `
-        <div style="${glow}transition:all .15s ease;cursor:pointer;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 22 30">
-                <path d="M11 0C6.029 0 2 4.029 2 9c0 6.75 9 21 9 21S20 15.75 20 9C20 4.029 15.971 0 11 0z"
-                      fill="${fill}" stroke="${stroke}" stroke-width="1.8"/>
-                <circle cx="11" cy="9" r="4" fill="${dotFill}"/>
-            </svg>
+        <div class="map-pin-icon ${isFull ? 'cancelled' : ''}">
+            <div class="map-pin-dot"></div>
         </div>
     `;
 
     return L.divIcon({
         html,
         className: '',
-        iconSize: [w, h],
-        iconAnchor: [w / 2, h],
+        iconSize: [34, 42],
+        iconAnchor: [17, 42],
+        popupAnchor: [0, -34],
     });
 }
 
@@ -242,8 +222,6 @@ export function JordanMap({
 
                 {/* دبابيس المبادرات الفردية — z-index مرتفع لضمان قابلية النقر */}
                 {pinnedInitiatives.map((initiative) => {
-                    const isSelected = selectedInitiativeId === initiative.id;
-
                     return (
                         <Marker
                             key={`initiative-${initiative.id}`}
@@ -251,11 +229,10 @@ export function JordanMap({
                                 initiative.latitude!,
                                 initiative.longitude!,
                             ]}
-                            icon={makeInitiativeIcon(
-                                isSelected,
-                                initiative.is_joined,
-                            )}
-                            zIndexOffset={isSelected ? 2000 : 500}
+                            icon={makeInitiativeIcon(initiative.full === true)}
+                            zIndexOffset={
+                                selectedInitiativeId === initiative.id ? 2000 : 500
+                            }
                             eventHandlers={{
                                 click: () => onInitiativeSelect(initiative.id),
                             }}
@@ -299,8 +276,8 @@ export function JordanMap({
                         >
                             <path
                                 d="M11 0C6.029 0 2 4.029 2 9c0 6.75 9 21 9 21S20 15.75 20 9C20 4.029 15.971 0 11 0z"
-                                fill="#2d9c62"
-                                stroke="#1a7a4a"
+                                fill="#2563eb"
+                                stroke="#1d4ed8"
                                 strokeWidth="1.8"
                             />
                             <circle cx="11" cy="9" r="4" fill="#fff" />
@@ -317,8 +294,8 @@ export function JordanMap({
                         >
                             <path
                                 d="M14 0C7.925 0 3 4.925 3 11c0 8.25 11 27 11 27S25 19.25 25 11C25 4.925 20.075 0 14 0z"
-                                fill="#2d9c62"
-                                stroke="#1a7a4a"
+                                fill="#2563eb"
+                                stroke="#1d4ed8"
                                 strokeWidth="1.6"
                             />
                             <circle

@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { HandHeart, LayoutDashboard, LogOut, ShieldCheck, Trophy, UserRound } from 'lucide-react';
+import { LayoutDashboard, LogOut, ShieldCheck, Trophy, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AppearanceToggle } from '@/components/appearance-toggle';
@@ -40,9 +40,11 @@ export function SiteHeader() {
                     href={home()}
                     className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-foreground"
                 >
-                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                        <HandHeart className="size-5" />
-                    </span>
+                    <img
+                        src="/himma-logo.png"
+                        alt="همة"
+                        className="h-9 w-9 rounded-xl border border-border object-cover shadow-sm"
+                    />
                     همة
                 </Link>
                 {user && (

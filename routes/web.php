@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminInitiativesController;
 use App\Http\Controllers\Admin\AdminRewardsController;
 use App\Http\Controllers\Admin\AdminUsersController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CollaborationsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
@@ -19,6 +20,9 @@ Route::get('/', [HomeController::class, 'show'])->name('home');
 Route::get('collaborations', [CollaborationsController::class, 'collaborations'])->name('collaborations');
 Route::get('mobile-app', [MobileAppController::class, 'show'])->name('mobile-app');
 Route::get('collaborators', [CollaborationsController::class, 'collaborations'])->name('collaborators');
+Route::post('chatbot/respond', [ChatbotController::class, 'respond'])
+    ->middleware('throttle:30,1')
+    ->name('chatbot.respond');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard');
