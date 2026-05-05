@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import { Moon, Sun } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useAppearance, type Appearance } from '@/hooks/use-appearance';
+import { useAppearance  } from '@/hooks/use-appearance';
+import type {Appearance} from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 
 type Props = {

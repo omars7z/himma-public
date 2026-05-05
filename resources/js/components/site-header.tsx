@@ -2,8 +2,11 @@ import { Link, usePage } from '@inertiajs/react';
 import { LayoutDashboard, LogOut, ShieldCheck, Trophy, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { index as adminInitiatives } from '@/actions/App/Http/Controllers/Admin/AdminInitiativesController';
+import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import { AppearanceToggle } from '@/components/appearance-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,8 +15,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { index as adminInitiatives } from '@/actions/App/Http/Controllers/Admin/AdminInitiativesController';
-import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import { useUnionNav } from '@/lib/site-nav';
 import { dashboard, home, login, logout, register } from '@/routes';
 
@@ -34,30 +35,40 @@ export function SiteHeader() {
     const isRegisterPage = page.component === 'auth/register';
 
     return (
-        <header className="sticky top-0 z-999 border-b border-border bg-background/85 backdrop-blur supports-backdrop-filter:bg-background/70">
-            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-                <Link
-                    href={home()}
-                    className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-foreground"
-                >
-                    <img
-                        src="/himma-logo.png"
-                        alt="همة"
-                        className="h-9 w-9 rounded-xl border border-border object-cover shadow-sm"
-                    />
-                    همة
-                </Link>
-                {user && (
-                    <span className="hidden items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-1.5 text-sm font-semibold text-primary sm:inline-flex">
-                        <Trophy className="size-3.5" />
-                        {new Intl.NumberFormat('en-US').format(user.points)}
-                        <span className="text-xs font-normal text-primary/70">
-                            نقطة
+        <header
+            dir="rtl"
+            className="sticky top-0 z-999 border-b border-border bg-background/85 backdrop-blur supports-backdrop-filter:bg-background/70"
+        >
+            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6">
+                {/* في RTL طرف البداية = يمين الشاشة: الشعار وحصالة النقاط */}
+                <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
+                    <Link
+                        href={home()}
+                        className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-label="الصفحة الرئيسية — همة"
+                    >
+                        <span className="flex size-11 items-center justify-center rounded-full border-2 border-primary/30 bg-card p-1 shadow-sm ring-1 ring-border sm:size-13">
+                            <img
+                                src="/himma-logo.png"
+                                alt=""
+                                className="size-full rounded-full object-cover"
+                            />
                         </span>
-                    </span>
-                )}
+                    </Link>
+                    {user ? (
+                        <span className="hidden items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-1.5 text-sm font-semibold text-primary sm:inline-flex">
+                            <Trophy className="size-3.5 shrink-0" />
+                            <span className="tabular-nums">
+                                {new Intl.NumberFormat('en-US').format(user.points)}
+                            </span>
+                            <span className="text-xs font-normal text-primary/70">
+                                نقطة
+                            </span>
+                        </span>
+                    ) : null}
+                </div>
 
-                <nav className="hidden items-center gap-1 md:flex" dir="rtl">
+                <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex" aria-label="التنقل الرئيسي">
                     {links.map((link) => (
                         <a
                             key={link.key}
@@ -69,7 +80,15 @@ export function SiteHeader() {
                     ))}
                 </nav>
 
-                <div className="flex shrink-0 items-center gap-2">
+                {/* في RTL طرف النهاية = يسار الشاشة: الإدارة + الوضع الليلي + الحساب (تم تبديل موضع الإدارة ومفتاح الوضع) */}
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    {isAdmin ? (
+                        <Button variant="outline" size="icon" asChild className="h-9 w-9 shrink-0">
+                            <Link href={adminInitiatives().url} aria-label="لوحة الإدارة">
+                                <ShieldCheck className="size-4" aria-hidden />
+                            </Link>
+                        </Button>
+                    ) : null}
                     <AppearanceToggle />
                     {user ? (
                         <>

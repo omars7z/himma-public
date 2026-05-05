@@ -6,6 +6,7 @@ import {
     CheckCircle2,
     HandHeart,
     MapPin,
+    Star,
     Trophy,
     UserCheck,
     UserMinus,
@@ -13,14 +14,14 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import {
+    index as indexInitiatives,
+} from '@/actions/App/Http/Controllers/InitiativesController';
+import {
     store,
     destroy,
 } from '@/actions/App/Http/Controllers/ParticipationsController';
-import {
-    index as indexInitiatives,
-} from '@/actions/App/Http/Controllers/InitiativesController';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SiteHeader } from '@/components/site-header';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { JORDAN_CITIES } from '@/constants/jordan-cities';
 
 type Initiative = {
@@ -38,6 +39,8 @@ type Initiative = {
     creator_avatar_url: string | null;
     target_gender: 'male' | 'female' | null;
     min_age: number | null;
+    reviews_average: number | null;
+    reviews_count: number;
     creation_points: number;
     is_joined: boolean;
 };
@@ -51,7 +54,10 @@ const formatNumber = (value: number): string =>
     new Intl.NumberFormat('en-US').format(value);
 
 const formatArabicDate = (iso: string | null): string => {
-    if (!iso) return 'موعد قريب';
+    if (!iso) {
+return 'موعد قريب';
+}
+
     return new Intl.DateTimeFormat('ar-JO-u-nu-latn', {
         weekday: 'long',
         day: 'numeric',
@@ -226,6 +232,30 @@ export default function InitiativeShow({
                                                 </dd>
                                             </div>
                                         </div>
+
+                                        {initiative.reviews_count > 0 &&
+                                        initiative.reviews_average !== null ? (
+                                            <div className="flex items-start gap-3">
+                                                <Star className="mt-0.5 size-4.5 shrink-0 fill-primary/25 text-primary" />
+                                                <div>
+                                                    <dt className="text-xs font-semibold text-muted-foreground">
+                                                        تقييم المشاركين
+                                                    </dt>
+                                                    <dd className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
+                                                        {Number(
+                                                            initiative.reviews_average,
+                                                        ).toFixed(1)}{' '}
+                                                        <span className="font-normal text-muted-foreground">
+                                                            (
+                                                            {formatNumber(
+                                                                initiative.reviews_count,
+                                                            )}{' '}
+                                                            تقييم)
+                                                        </span>
+                                                    </dd>
+                                                </div>
+                                            </div>
+                                        ) : null}
 
                                         {/* المنشئ */}
                                         {initiative.creator_username && (

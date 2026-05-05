@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Form, Head } from '@inertiajs/react';
 import { CheckCircle2, Circle } from 'lucide-react';
-import { JORDAN_CITIES } from '@/constants/jordan-cities';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -16,6 +15,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { JORDAN_CITIES } from '@/constants/jordan-cities';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
@@ -107,6 +107,7 @@ export default function Register() {
                                     >
                                         {PASSWORD_RULES.map(({ label, check }) => {
                                             const passed = check(password);
+
                                             return (
                                                 <li
                                                     key={label}

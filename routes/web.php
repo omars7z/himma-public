@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'show'])->name('home');
 
 Route::get('collaborations', [CollaborationsController::class, 'collaborations'])->name('collaborations');
+Route::get('rewards', [RewardsController::class, 'index'])->name('rewards.index');
 Route::get('mobile-app', [MobileAppController::class, 'show'])->name('mobile-app');
 Route::get('collaborators', [CollaborationsController::class, 'collaborations'])->name('collaborators');
 Route::post('chatbot/respond', [ChatbotController::class, 'respond'])

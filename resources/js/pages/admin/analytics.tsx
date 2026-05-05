@@ -1,5 +1,4 @@
 import { Head, Link } from '@inertiajs/react';
-import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import {
     BarChart2,
     CheckCircle2,
@@ -27,10 +26,11 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AdminLayout from '@/layouts/admin-layout';
 import { JORDAN_CITIES } from '@/constants/jordan-cities';
+import AdminLayout from '@/layouts/admin-layout';
 
 /* ── colours ──────────────────────────────────────────────── */
 const C = {
@@ -76,6 +76,7 @@ const fmt = (n: number) => new Intl.NumberFormat('ar-JO').format(n);
 
 function monthLabel(key: string) {
     const [y, m] = key.split('-');
+
     return new Intl.DateTimeFormat('ar-JO', {
         month: 'short',
         year: '2-digit',
@@ -84,6 +85,7 @@ function monthLabel(key: string) {
 
 function dayLabel(key: string) {
     const d = new Date(key);
+
     return new Intl.DateTimeFormat('ar-JO', {
         day: 'numeric',
         month: 'short',
@@ -123,12 +125,14 @@ function mergeMonthly(
 function toWeekly(daily: Record<string, number>) {
     const days = Object.entries(daily).sort(([a], [b]) => a.localeCompare(b));
     const weeks: { week: string; مبادرات: number }[] = [];
+
     for (let i = 0; i < days.length; i += 7) {
         const slice = days.slice(i, i + 7);
         const total = slice.reduce((s, [, v]) => s + v, 0);
         const label = dayLabel(slice[0][0]);
         weeks.push({ week: label, مبادرات: total });
     }
+
     return weeks;
 }
 
@@ -187,7 +191,10 @@ function ChartTooltip({
     payload?: { name: string; value: number; color: string }[];
     label?: string;
 }) {
-    if (!active || !payload?.length) return null;
+    if (!active || !payload?.length) {
+return null;
+}
+
     return (
         <div className="rounded-xl border border-border bg-card px-3 py-2.5 shadow-lg" dir="rtl">
             {label && (
@@ -381,6 +388,7 @@ function CityHotspotChart({
                                 {data.map((entry, i) => {
                                     const intensity = entry.مبادرات / maxVal;
                                     const lightness = Math.round(36 + (1 - intensity) * 30);
+
                                     return (
                                         <Cell
                                             key={i}
@@ -448,11 +456,15 @@ function StatusDonut({ stats }: { stats: Stats }) {
                                     </Pie>
                                     <Tooltip
                                         content={({ active, payload }) => {
-                                            if (!active || !payload?.length) return null;
+                                            if (!active || !payload?.length) {
+return null;
+}
+
                                             const p = payload[0];
                                             const pct = Math.round(
                                                 ((p.value as number) / total) * 100,
                                             );
+
                                             return (
                                                 <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg" dir="rtl">
                                                     <p className="text-xs font-semibold text-foreground">

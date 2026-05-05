@@ -13,12 +13,12 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { show as adminAnalytics } from '@/actions/App/Http/Controllers/Admin/AdminDashboardController';
 import { index as adminInitiatives } from '@/actions/App/Http/Controllers/Admin/AdminInitiativesController';
 import { index as adminRewards } from '@/actions/App/Http/Controllers/Admin/AdminRewardsController';
 import { index as adminUsers } from '@/actions/App/Http/Controllers/Admin/AdminUsersController';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { home, logout } from '@/routes';
 
 type NavItem = {
@@ -101,6 +101,7 @@ function SidebarContent({
                 <ul className="space-y-0.5">
                     {NAV_ITEMS.map((item) => {
                         const isActive = currentPath.startsWith(item.matchPrefix ?? item.href);
+
                         return (
                             <li key={item.href}>
                                 <Link

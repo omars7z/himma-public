@@ -1,8 +1,9 @@
+import { MessageCircle, Send, X } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { respond } from '@/actions/App/Http/Controllers/ChatbotController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, Send, X } from 'lucide-react';
-import { FormEvent, useMemo, useState } from 'react';
 
 type ChatMessage = {
     role: 'user' | 'assistant';
@@ -29,6 +30,7 @@ export function ChatbotWidget() {
         event.preventDefault();
 
         const userText = message.trim();
+
         if (userText.length === 0 || isLoading) {
             return;
         }
@@ -82,15 +84,15 @@ export function ChatbotWidget() {
     }
 
     return (
-        <div className="fixed bottom-4 left-4 z-50">
+        <div className="fixed bottom-5 left-5 z-50 sm:bottom-6 sm:left-6">
             {open ? (
-                <div className="flex h-112 w-84 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-border bg-primary/10 px-4 py-3">
+                <div className="flex h-[min(32rem,calc(100vh-5rem))] w-[min(23rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:h-[34rem] sm:w-96">
+                    <div className="flex items-center justify-between border-b border-border bg-primary/10 px-4 py-3.5 sm:px-5 sm:py-4">
                         <div>
-                            <p className="text-sm font-bold text-foreground">
+                            <p className="text-base font-bold text-foreground">
                                 مساعد همة
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                                 الأردن · 18-30 · مبادرات اجتماعية
                             </p>
                         </div>
@@ -98,18 +100,19 @@ export function ChatbotWidget() {
                             type="button"
                             variant="ghost"
                             size="icon"
+                            className="size-10 shrink-0"
                             onClick={() => setOpen(false)}
                             aria-label="إغلاق المحادثة"
                         >
-                            <X className="size-4" />
+                            <X className="size-5" />
                         </Button>
                     </div>
 
-                    <div className="flex-1 space-y-3 overflow-y-auto bg-background p-3">
+                    <div className="flex-1 space-y-3.5 overflow-y-auto bg-background p-4">
                         {messages.map((item, index) => (
                             <div
                                 key={`${item.role}-${index}`}
-                                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
+                                className={`max-w-[88%] rounded-xl px-3.5 py-2.5 text-base leading-relaxed ${
                                     item.role === 'user'
                                         ? 'mr-auto bg-primary text-primary-foreground'
                                         : 'bg-muted text-foreground'
@@ -119,7 +122,7 @@ export function ChatbotWidget() {
                             </div>
                         ))}
                         {isLoading ? (
-                            <div className="max-w-[85%] rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
+                            <div className="max-w-[88%] rounded-xl bg-muted px-3.5 py-2.5 text-base text-muted-foreground">
                                 جاري التفكير...
                             </div>
                         ) : null}
@@ -127,21 +130,23 @@ export function ChatbotWidget() {
 
                     <form
                         onSubmit={handleSubmit}
-                        className="flex items-center gap-2 border-t border-border p-3"
+                        className="flex items-center gap-2.5 border-t border-border p-4 sm:gap-3"
                     >
                         <Input
                             value={message}
                             onChange={(event) => setMessage(event.target.value)}
                             placeholder="اكتب سؤالك عن المبادرات..."
                             maxLength={1000}
+                            className="h-11 min-w-0 flex-1 text-base"
                         />
                         <Button
                             type="submit"
                             size="icon"
+                            className="size-11 shrink-0"
                             disabled={!canSend}
                             aria-label="إرسال"
                         >
-                            <Send className="size-4" />
+                            <Send className="size-5" />
                         </Button>
                     </form>
                 </div>
@@ -149,11 +154,11 @@ export function ChatbotWidget() {
                 <Button
                     type="button"
                     size="icon"
-                    className="size-12 rounded-full shadow-lg"
+                    className="size-14 rounded-full shadow-lg sm:size-16"
                     onClick={() => setOpen(true)}
                     aria-label="فتح مساعد همة"
                 >
-                    <MessageCircle className="size-5" />
+                    <MessageCircle className="size-7 sm:size-8" />
                 </Button>
             )}
         </div>

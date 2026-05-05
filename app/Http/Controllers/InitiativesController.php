@@ -139,7 +139,7 @@ class InitiativesController extends Controller
     }
 
     /**
-     * @return array{id: int, name: string, starts_at: string|null, city: string|null, latitude: float|null, longitude: float|null, description: string|null, min_participants: int|null, max_participants: int|null, participants_count: int, creator_username: string|null, creator_avatar_url: string|null, target_gender: string|null, min_age: int|null, creation_points: int, is_joined: bool}
+     * @return array{id: int, name: string, starts_at: string|null, city: string|null, latitude: float|null, longitude: float|null, description: string|null, min_participants: int|null, max_participants: int|null, participants_count: int, creator_username: string|null, creator_avatar_url: string|null, target_gender: string|null, min_age: int|null, reviews_count: int, reviews_average: float|null, creation_points: int, is_joined: bool}
      */
     private static function formatInitiative(Initiative $initiative, bool $isJoined): array
     {
@@ -158,6 +158,10 @@ class InitiativesController extends Controller
             'creator_avatar_url' => $initiative->creator?->avatar_url,
             'target_gender' => $initiative->target_gender,
             'min_age' => $initiative->min_age,
+            'reviews_count' => (int) $initiative->reviews_count,
+            'reviews_average' => $initiative->reviews_average !== null
+                ? round((float) $initiative->reviews_average, 1)
+                : null,
             'creation_points' => $initiative->creation_points,
             'is_joined' => $isJoined,
         ];

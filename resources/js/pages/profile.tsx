@@ -69,12 +69,19 @@ const GENDER_LABEL: Record<string, string> = {
 };
 
 function calcAge(birthdate: string | null): number | null {
-    if (!birthdate) return null;
+    if (!birthdate) {
+return null;
+}
+
     const birth = new Date(birthdate);
     const now = new Date();
     let age = now.getFullYear() - birth.getFullYear();
     const m = now.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+age--;
+}
+
     return age;
 }
 
@@ -137,7 +144,10 @@ const PLATFORMS: {
 
 function SocialLinks({ links }: { links: ProfileUser['links'] }) {
     const active = PLATFORMS.filter((p) => links[p.key]);
-    if (!active.length) return null;
+
+    if (!active.length) {
+return null;
+}
 
     return (
         <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
@@ -543,7 +553,11 @@ export default function Profile({ profileUser, isOwn }: PageProps) {
 
     function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
-        if (!file) return;
+
+        if (!file) {
+return;
+}
+
         setAvatarPreview(URL.createObjectURL(file));
         setAvatarUploading(true);
         const fd = new FormData();
@@ -561,7 +575,11 @@ export default function Profile({ profileUser, isOwn }: PageProps) {
 
     function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
-        if (!file) return;
+
+        if (!file) {
+return;
+}
+
         const preview = URL.createObjectURL(file);
         const fd = new FormData();
         fd.append('cover', file);

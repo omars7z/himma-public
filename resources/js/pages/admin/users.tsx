@@ -37,8 +37,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/sonner';
-import AdminLayout from '@/layouts/admin-layout';
 import { JORDAN_CITIES } from '@/constants/jordan-cities';
+import AdminLayout from '@/layouts/admin-layout';
 
 /* ── types ─────────────────────────────────────────────────── */
 type User = {
@@ -97,7 +97,11 @@ function AdjustPointsDialog({
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         const n = parseInt(delta, 10);
-        if (isNaN(n) || n === 0) return;
+
+        if (isNaN(n) || n === 0) {
+return;
+}
+
         setBusy(true);
         router.post(
             adjustPoints(user.id).url,
@@ -121,7 +125,9 @@ function AdjustPointsDialog({
         <Dialog
             open={open}
             onOpenChange={(v) => {
-                if (!v) { setDelta(''); onClose(); }
+                if (!v) {
+ setDelta(''); onClose(); 
+}
             }}
         >
             <DialogContent className="sm:max-w-sm" dir="rtl">
@@ -234,7 +240,11 @@ function DeleteConfirmDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+        <Dialog open={open} onOpenChange={(v) => {
+ if (!v) {
+onClose();
+} 
+}}>
             <DialogContent className="sm:max-w-sm" dir="rtl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-base text-destructive">
@@ -400,6 +410,7 @@ export default function AdminUsersPage({ users, authId }: Props) {
                 roleFilter === 'all' ||
                 (roleFilter === 'admin' && u.role === 'admin') ||
                 (roleFilter === 'user' && u.role !== 'admin');
+
             return matchSearch && matchRole;
         });
     }, [users, search, roleFilter]);

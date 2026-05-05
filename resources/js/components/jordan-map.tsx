@@ -89,6 +89,7 @@ function makeEmptyCityIcon() {
             </svg>
         </div>
     `;
+
     return L.divIcon({
         html,
         className: '',
@@ -129,6 +130,7 @@ export function JordanMap({
     useEffect(() => {
         const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
         document.addEventListener('fullscreenchange', onFsChange);
+
         return () =>
             document.removeEventListener('fullscreenchange', onFsChange);
     }, []);

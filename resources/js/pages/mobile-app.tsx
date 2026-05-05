@@ -191,9 +191,18 @@ export default function MobileApp() {
 
                             {/* Phone mockup */}
                             <div className="hidden justify-center lg:flex">
-                                <div className="relative">
-                                    <div className="absolute -inset-8 rounded-full bg-primary/8 blur-3xl" />
+                                <div className="relative z-10">
+                                    <img
+                                        alt=""
+                                        src="/images/himma/community-cleanup-hills.jpg"
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="pointer-events-none absolute inset-y-10 -start-24 z-0 h-[min(100%,380px)] w-56 rounded-3xl object-cover opacity-[0.28] shadow-xl ring-1 ring-primary/20"
+                                    />
+                                    <div className="absolute -inset-8 z-1 rounded-full bg-primary/8 blur-3xl" />
+                                    <div className="relative z-2">
                                     <PhoneMockup />
+                                    </div>
                                 </div>
                             </div>
                         </div>

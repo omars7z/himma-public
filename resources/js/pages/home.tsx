@@ -1,9 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
+    ArrowDownWideNarrow,
     ArrowRight,
     CalendarDays,
     ChevronDown,
+    ChevronLeft,
     Gift,
     Flame,
     HandHeart,
@@ -11,31 +13,38 @@ import {
     MapPin,
     Plus,
     Sparkles,
+    Star,
     Trophy,
     UserCheck,
     UserMinus,
     Users,
     X,
 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import {
     store,
     destroy,
 } from '@/actions/App/Http/Controllers/ParticipationsController';
-import { redeem } from '@/actions/App/Http/Controllers/RewardsController';
-import type { InitiativePin } from '@/components/jordan-map';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { SiteHeader } from '@/components/site-header';
-import { JORDAN_CITIES } from '@/constants/jordan-cities';
-import { NAV_LINKS, getNavLinkHref } from '@/lib/site-nav';
-import { login, register } from '@/routes';
-import { index as initiativesIndex } from '@/routes/initiatives';
 import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
+import type { InitiativePin } from '@/components/jordan-map';
+import { SiteHeader } from '@/components/site-header';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { JORDAN_CITIES } from '@/constants/jordan-cities';
+import type { InitiativeSortKey } from '@/lib/initiative-sort';
+import { INITIATIVE_SORT_OPTIONS, sortInitiatives } from '@/lib/initiative-sort';
+import { NAV_LINKS, getNavLinkHref } from '@/lib/site-nav';
+import { collaborations, login, register } from '@/routes';
+import { index as initiativesIndex } from '@/routes/initiatives';
+import { index as rewardsIndex } from '@/routes/rewards';
 
 const JordanMap = lazy(async () => {
-    if (typeof window === 'undefined') return { default: () => <></> };
-    return import('@/components/jordan-map').then((m) => ({ default: m.JordanMap }));
+    if (typeof window === 'undefined') {
+        return { default: () => <></> };
+    }
+
+    return import('@/components/jordan-map').then((m) => ({
+        default: m.JordanMap,
+    }));
 });
 
 type FeaturedInitiative = {
@@ -53,6 +62,8 @@ type FeaturedInitiative = {
     creator_avatar_url: string | null;
     target_gender: 'male' | 'female' | null;
     min_age: number | null;
+    reviews_average: number | null;
+    reviews_count: number;
     creation_points: number;
     is_joined: boolean;
 };
@@ -111,49 +122,19 @@ type Stats = {
     users_count: number;
 };
 
-type RewardSummary = {
-    id: number;
-    title: string;
-    description: string | null;
-    points_cost: number;
-    image_url: string;
+type LeaderboardContributor = {
+    username: string;
+    avatar_url: string;
+    points: number;
+    city: string | null;
 };
-
-type PaginatedRewards = {
-    data: RewardSummary[];
-    links: { prev: string | null; next: string | null };
-    meta: {
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        from: number | null;
-        to: number | null;
-    };
-};
-
-const EMPTY_REWARDS_PAGE: PaginatedRewards = {
-    data: [],
-    links: { prev: null, next: null },
-    meta: {
-        current_page: 1,
-        last_page: 1,
-        per_page: 8,
-        total: 0,
-        from: null,
-        to: null,
-    },
-};
-
-/** احتياطي عميلي إذا فشل تحميل الرابط القادم من الخادم (يتطابق مع أحد معرّفات picsum الاحتياطية). */
-const CLIENT_REWARD_IMAGE_FALLBACK =
-    'https://picsum.photos/id/237/800/600.jpg';
 
 type HomeProps = {
     withdrawalPenaltyPoints: number;
     stats: Stats;
     featuredInitiatives: FeaturedInitiative[];
-    rewards?: PaginatedRewards;
+    leaderboard?: LeaderboardContributor[];
+    rewardsTotal?: number;
 };
 
 /** Latin digits (0–9) for all numeric display on this page. */
@@ -172,11 +153,23 @@ const formatArabicDate = (iso: string | null): string => {
     }).format(new Date(iso));
 };
 
+function leaderboardCityLabel(city: string | null): string | null {
+    if (!city) {
+        return null;
+    }
+
+    return (
+        JORDAN_CITIES.find((c) => c.value === city.toLowerCase())?.label ??
+        city
+    );
+}
+
 export default function Home({
     withdrawalPenaltyPoints,
     stats,
     featuredInitiatives,
-    rewards = EMPTY_REWARDS_PAGE,
+    leaderboard = [],
+    rewardsTotal = 0,
 }: HomeProps) {
     const { auth, canRegister } = usePage().props;
 
@@ -199,6 +192,8 @@ export default function Home({
 
                     <StatsSection stats={stats} />
 
+                    <LeaderboardSection contributors={leaderboard} />
+
                     <FeaturedInitiatives
                         initiatives={featuredInitiatives}
                         withdrawalPenaltyPoints={withdrawalPenaltyPoints}
@@ -206,9 +201,10 @@ export default function Home({
                         canRegister={canRegister}
                     />
 
-                    <RewardsSection
-                        rewards={rewards}
+                    <RewardsHomeTeaser
+                        total={rewardsTotal}
                         isAuthed={!!auth.user}
+                        canRegister={canRegister}
                     />
                 </main>
 
@@ -229,9 +225,9 @@ function Hero({
         <section className="relative overflow-hidden border-b border-border bg-linear-to-b from-initiative-surface/80 via-background to-background">
             <div className="pointer-events-none absolute inset-0">
                 <img
-                    src="https://images.unsplash.com/photo-1469571486292-b53601020f10?auto=format&fit=crop&w=1600&q=80"
+                    src="/images/himma/hero-volunteer-planting.jpg"
                     alt=""
-                    className="h-full w-full object-cover opacity-20"
+                    className="h-full w-full object-cover opacity-22"
                 />
             </div>
             <div
@@ -278,11 +274,117 @@ function Hero({
                         ) : null}
                     </div>
 
-                    <p className="mt-6 text-xs text-muted-foreground">
-                        التسجيل متاح لمن أتمّ الـ 13 عامًا فأكثر · رقم الهاتف
-                        يبدأ بـ +962
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function LeaderboardSection({
+    contributors,
+}: {
+    contributors: LeaderboardContributor[];
+}) {
+    const medals = ['🥇', '🥈', '🥉'];
+
+    return (
+        <section
+            id="leaderboard"
+            className="scroll-mt-20 border-b border-border bg-muted/30"
+            aria-labelledby="leaderboard-heading"
+        >
+            <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+                <div className="mb-10 text-center">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
+                        <Trophy className="size-3.5" />
+                        لوحة المتصدرين
+                    </span>
+                    <h2
+                        id="leaderboard-heading"
+                        className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl"
+                    >
+                        أعلى المتطوعين نقاطًا
+                    </h2>
+                    <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">
+                        أفضل خمس حسابات حسب نقاط حضور وتفاعل المبادرات. انقر أي
+                        صف لتفتح ملف المتطوع.
                     </p>
                 </div>
+
+                {contributors.length === 0 ? (
+                    <div className="mx-auto max-w-md rounded-2xl border border-dashed border-border bg-card p-10 text-center">
+                        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-initiative-surface text-primary">
+                            <Trophy className="size-6" />
+                        </span>
+                        <p className="mt-4 text-sm font-semibold text-foreground">
+                            لا يوجد متصدرون بعد
+                        </p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            انضم إلى مبادرة وحضّر فعالياتك لتظهر نقاطك هنا.
+                        </p>
+                    </div>
+                ) : (
+                    <ul
+                        className="mx-auto max-w-xl space-y-2.5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6"
+                        dir="rtl"
+                    >
+                        {contributors.map((c, i) => {
+                            const cityLbl = leaderboardCityLabel(c.city);
+
+                            return (
+                                <li key={c.username}>
+                                    <Link
+                                        href={showUser(c.username).url}
+                                        className={`flex items-center gap-3 rounded-xl p-3 transition-colors ${
+                                            i === 0
+                                                ? 'border border-initiative-highlight/25 bg-initiative-highlight/10 hover:bg-initiative-highlight/18'
+                                                : 'hover:bg-muted/60'
+                                        }`}
+                                    >
+                                        <span className="w-7 shrink-0 text-center text-base leading-none">
+                                            {medals[i] ?? (
+                                                <span className="text-xs font-black tabular-nums text-muted-foreground">
+                                                    {formatNumber(i + 1)}
+                                                </span>
+                                            )}
+                                        </span>
+                                        <Avatar className="size-10 border border-border">
+                                            <AvatarImage
+                                                src={c.avatar_url}
+                                                alt={c.username}
+                                            />
+                                            <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
+                                                {c.username
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 flex-1 text-start">
+                                            <p className="truncate font-semibold text-foreground">
+                                                @{c.username}
+                                            </p>
+                                            {cityLbl ? (
+                                                <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                                                    <MapPin className="size-3 shrink-0" />
+                                                    {cityLbl}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <span
+                                            className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold tabular-nums ${
+                                                i === 0
+                                                    ? 'bg-initiative-highlight/20 text-initiative-highlight'
+                                                    : 'border border-primary/20 bg-primary/10 text-primary'
+                                            }`}
+                                        >
+                                            {formatNumber(c.points)} نقطة
+                                        </span>
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
             </div>
         </section>
     );
@@ -369,6 +471,7 @@ function FeaturedInitiatives({
     >(null);
     const [joinConfirming, setJoinConfirming] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [sortKey, setSortKey] = useState<InitiativeSortKey>('starts_at_asc');
 
     const filteredInitiatives = useMemo(() => {
         return initiatives.filter((i) => {
@@ -397,6 +500,12 @@ return false;
         });
     }, [initiatives, selectedCity, genderFilter, ageFilter]);
 
+    /** القائمة بعد الفرز — تستخدم للخرائط واللوحة والدبابيس. */
+    const filteredSortedInitiatives = useMemo(
+        () => sortInitiatives(filteredInitiatives, sortKey),
+        [filteredInitiatives, sortKey],
+    );
+
     /** City counts based on filtered initiatives so markers reflect active filters. */
     const filteredCityCounts = useMemo(() => {
         const counts: Record<string, number> = {};
@@ -415,9 +524,9 @@ return false;
     /** Derive the selected initiative from current props (auto-updates after join/leave). */
     const selectedInitiative = useMemo(
         () =>
-            filteredInitiatives.find((i) => i.id === selectedInitiativeId) ??
+            filteredSortedInitiatives.find((i) => i.id === selectedInitiativeId) ??
             null,
-        [filteredInitiatives, selectedInitiativeId],
+        [filteredSortedInitiatives, selectedInitiativeId],
     );
 
     const cityInitiatives = useMemo(() => {
@@ -425,15 +534,15 @@ return false;
 return [];
 }
 
-        return filteredInitiatives.filter(
+        return filteredSortedInitiatives.filter(
             (i) => i.city?.toLowerCase() === selectedCity,
         );
-    }, [filteredInitiatives, selectedCity]);
+    }, [filteredSortedInitiatives, selectedCity]);
 
     /** Pins passed to the map — one per initiative that has coordinates. */
     const initiativePins: InitiativePin[] = useMemo(
         () =>
-            filteredInitiatives.map((i) => ({
+            filteredSortedInitiatives.map((i) => ({
                 id: i.id,
                 name: i.name,
                 city: i.city,
@@ -445,12 +554,12 @@ return [];
                     i.max_participants > 0 &&
                     i.participants_count >= i.max_participants,
             })),
-        [filteredInitiatives],
+        [filteredSortedInitiatives],
     );
 
     /** Clicking a pin on the map selects that initiative and switches the panel. */
     function handleMapInitiativeSelect(id: number) {
-        const initiative = filteredInitiatives.find((i) => i.id === id);
+        const initiative = filteredSortedInitiatives.find((i) => i.id === id);
 
         if (!initiative) {
 return;
@@ -600,6 +709,31 @@ return;
                                     {opt.label}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    <div className="h-5 w-px bg-border" />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                            <ArrowDownWideNarrow className="size-3.5 shrink-0" />
+                            الترتيب
+                        </span>
+                        <div className="relative">
+                            <select
+                                value={sortKey}
+                                onChange={(e) =>
+                                    setSortKey(e.target.value as InitiativeSortKey)
+                                }
+                                className="appearance-none rounded-lg border border-border bg-background py-1.5 pr-3 pl-7 text-sm font-medium text-foreground focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                            >
+                                {INITIATIVE_SORT_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         </div>
                     </div>
 
@@ -766,7 +900,9 @@ function InitiativesPanel({
     canRegister: boolean;
     processing: boolean;
 }) {
-    if (!selectedCity) return null;
+    if (!selectedCity) {
+return null;
+}
 
     const cityLabel =
         JORDAN_CITIES.find((c) => c.value === selectedCity)?.label ??
@@ -946,6 +1082,22 @@ function InitiativeDetail({
                             نقطة للحضور
                         </span>
                     </div>
+
+                    {initiative.reviews_count > 0 &&
+                    initiative.reviews_average !== null ? (
+                        <div className="flex items-center gap-2">
+                            <Star className="size-3.5 shrink-0 fill-primary/25 text-primary" />
+                            <span>
+                                <span className="font-bold tabular-nums text-foreground">
+                                    {Number(initiative.reviews_average).toFixed(
+                                        1,
+                                    )}
+                                </span>{' '}
+                                — {formatNumber(initiative.reviews_count)}{' '}
+                                تقييم
+                            </span>
+                        </div>
+                    ) : null}
 
                     {/* المشاركون */}
                     <div>
@@ -1132,237 +1284,193 @@ function InitiativeDetail({
     );
 }
 
-function withRewardsSectionHash(url: string): string {
-    return url.includes('#')
-        ? url.replace(/#.*$/, '#rewards')
-        : `${url}#rewards`;
-}
-
-function RewardCoverImage({
-    alt,
-    src,
-}: {
-    alt: string;
-    src: string;
-}) {
-    const [failed, setFailed] = useState(false);
-
-    useEffect(() => {
-        setFailed(false);
-    }, [src]);
-
-    return (
-        <img
-            src={failed ? CLIENT_REWARD_IMAGE_FALLBACK : src}
-            alt={alt}
-            className="size-full object-cover"
-            loading="lazy"
-            decoding="async"
-            onError={
-                failed
-                    ? undefined
-                    : () => {
-                          setFailed(true);
-                      }
-            }
-        />
-    );
-}
-
-function RewardsSection({
-    rewards,
+function RewardsHomeTeaser({
+    total,
     isAuthed,
+    canRegister,
 }: {
-    rewards: PaginatedRewards;
+    total: number;
     isAuthed: boolean;
+    canRegister: boolean;
 }) {
     const { auth } = usePage().props;
     const userPoints = auth.user?.points ?? 0;
-    const [redeemingId, setRedeemingId] = useState<number | null>(null);
-    const { data: rewardRows, links, meta } = rewards;
-
-    function handleRedeem(rewardId: number) {
-        setRedeemingId(rewardId);
-        router.post(
-            redeem(rewardId).url,
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setRedeemingId(null),
-                onSuccess: () =>
-                    toast.success('تم استرداد المكافأة وخصم النقاط من رصيدك.'),
-                onError: (errors) => {
-                    const raw = errors.reward;
-                    const message = Array.isArray(raw)
-                        ? (raw[0] ?? 'تعذّر إتمام الاسترداد.')
-                        : (raw ?? 'تعذّر إتمام الاسترداد.');
-                    toast.error(message);
-                },
-            },
-        );
-    }
 
     return (
         <section
             id="rewards"
             className="scroll-mt-20 border-b border-border bg-background"
-            aria-labelledby="rewards-heading"
+            aria-labelledby="rewards-home-heading"
         >
-            <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-                <div className="mb-10 text-center">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
-                        <Gift className="size-3.5" />
-                        مكافآت الشركاء
-                    </span>
-                    <h2
-                        id="rewards-heading"
-                        className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl"
-                    >
-                        استرداد نقاطك
-                    </h2>
-                    <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">
-                        كلما شاركت وحضرت، زاد رصيدك. اختر مكافأة تناسبك واستبدل
-                        نقاطك بها فورًا.
-                    </p>
+            <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-4 py-12 sm:px-6 sm:py-16">
+                <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10">
+                    <div className="relative isolate flex min-h-[18rem] flex-col justify-center overflow-hidden rounded-[var(--radius)] border border-border p-6 text-right shadow-sm ring-1 ring-primary/5 sm:min-h-[20rem] sm:p-8">
+                        <img
+                            alt=""
+                            src="/images/himma/community-food-service.jpg"
+                            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-40"
+                        />
+                        <div
+                            aria-hidden
+                            className="absolute inset-0 z-[1] bg-linear-to-t from-background/97 via-background/88 to-background/55 dark:from-background/98 dark:via-background/93 dark:to-background/70"
+                        />
+                        <div className="relative z-10 flex flex-col">
+                            <div className="text-xs font-semibold text-primary">
+                                لمحة سريعة
+                            </div>
+                            <h2
+                                id="rewards-home-heading"
+                                className="mt-2 text-[clamp(1.5rem,3.5vw,2.35rem)] font-extrabold leading-tight tracking-tight text-foreground drop-shadow-sm"
+                            >
+                                مكافآت الشركاء — التفاصيل كاملة في صفحة مستقلة
+                            </h2>
+                            <p className="mt-3 max-w-xl text-[0.9375rem] leading-relaxed font-bold text-muted-foreground sm:text-base">
+                                الاستبدال والترقيم كاملان على صفحة «المكافآت» بمستوى
+                                تنظيم مماثل لتجربة «شركاؤنا»؛ من الرابط أدناه تنتقل
+                                مباشرة للمتجر.
+                            </p>
+                            <div className="mt-5 flex flex-wrap gap-3">
+                                <Link
+                                    href={rewardsIndex()}
+                                    className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+                                >
+                                    صفحة المكافآت والاستبدال
+                                </Link>
+                                <a
+                                    href="#initiatives"
+                                    className="inline-flex items-center justify-center rounded-md border border-border bg-background/92 px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-accent"
+                                >
+                                    اكسب نقاط الآن
+                                </a>
+                                <Link
+                                    href={collaborations()}
+                                    className="inline-flex items-center justify-center rounded-md border border-border bg-background/85 px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-accent"
+                                >
+                                    عن الشراكات والمنصة
+                                </Link>
+                                {!isAuthed && canRegister ? (
+                                    <Link
+                                        href={register()}
+                                        className="inline-flex items-center justify-center rounded-md border border-border bg-background/92 px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-accent"
+                                    >
+                                        أنشئ حسابًا
+                                    </Link>
+                                ) : null}
+                            </div>
+                            <div
+                                className="mt-4 inline-flex w-fit flex-col rounded-2xl border border-border bg-card/82 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground shadow-md backdrop-blur-md"
+                                style={{
+                                    boxShadow:
+                                        '0 10px 24px hsl(var(--primary) / 0.06)',
+                                }}
+                            >
+                                <span>رصيدك الحالي</span>
+                                {isAuthed ? (
+                                    <span className="mt-1 tabular-nums text-base font-black text-primary">
+                                        {formatNumber(userPoints)} نقطة
+                                    </span>
+                                ) : (
+                                    <span className="mt-1 text-[0.8rem] font-bold">
+                                        <Link
+                                            href={login()}
+                                            className="text-primary underline underline-offset-2 hover:opacity-90"
+                                        >
+                                            سجّل الدخول
+                                        </Link>
+                                        لمتابعة الرصيد والاستبدال.
+                                    </span>
+                                )}
+                            </div>
+                            {total > 0 ? (
+                                <p className="mt-3 text-xs font-bold tabular-nums text-muted-foreground">
+                                    إجمالي المكافآت المعروضة في المتجر مؤخرًا:
+                                    <span className="mx-1 text-foreground">
+                                        {formatNumber(total)}
+                                    </span>
+                                </p>
+                            ) : null}
+                        </div>
+                    </div>
+
+                    <div className="relative isolate flex min-h-[220px] items-center overflow-hidden rounded-3xl border border-border p-6 sm:min-h-[260px] sm:p-7">
+                        <img
+                            alt=""
+                            src="/images/himma/community-cleanup-team.jpg"
+                            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.42]"
+                        />
+                        <div
+                            aria-hidden
+                            className="absolute inset-0 z-[1] bg-linear-to-br from-background/96 via-background/78 to-background/65 dark:from-background/98 dark:via-background/88 dark:to-background/72"
+                        />
+                        <div
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_35%_30%,hsl(var(--primary)/0.12),transparent_55%),radial-gradient(ellipse_at_70%_70%,hsl(var(--initiative-highlight)/0.08),transparent_50%)]"
+                        />
+                        <div className="relative z-10 mx-auto grid w-full max-w-[16rem] gap-2 rounded-[1.1rem] border border-primary/15 bg-muted/85 p-5 text-center shadow-md backdrop-blur-sm">
+                            <Gift className="mx-auto size-9 text-primary" />
+                            <p className="text-sm font-extrabold text-foreground">
+                                استبدال منظم
+                            </p>
+                            <p className="text-[0.8rem] leading-relaxed font-semibold text-muted-foreground">
+                                انتقل إلى صفحة المكافآت لقراءة الشروط وللاستبدال
+                                بطريقة واحدة متسقة.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                {meta.total === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
-                        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-initiative-surface text-primary">
-                            <Gift className="size-6" />
+                <div
+                    dir="rtl"
+                    className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-stretch sm:gap-2"
+                >
+                    <article className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 text-right shadow-sm sm:p-5">
+                        <strong className="block text-sm font-bold text-foreground">
+                            كيف تجمع النقاط؟
+                        </strong>
+                        <span className="mt-2 block text-sm leading-relaxed font-semibold text-muted-foreground">
+                            من خلال مشاركاتك الموثقة وحضورك داخل المبادرات
+                            المعتمدة.
                         </span>
-                        <p className="mt-4 text-sm font-semibold text-foreground">
-                            لا توجد مكافآت متاحة حاليًا
-                        </p>
-                        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                            نعمل مع شركائنا لإضافة عروض جديدة قريبًا.
-                        </p>
-                    </div>
-                ) : (
-                    <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {rewardRows.map((reward) => {
-                            const canAfford = userPoints >= reward.points_cost;
-                            const busy = redeemingId === reward.id;
-
-                            return (
-                                <li key={reward.id}>
-                                    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
-                                        <div className="relative aspect-4/3 overflow-hidden bg-muted">
-                                            <RewardCoverImage
-                                                src={reward.image_url}
-                                                alt={reward.title}
-                                            />
-                                            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-foreground/35 via-transparent to-transparent" />
-                                            <span className="absolute inset-e-3 bottom-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-bold text-foreground shadow-sm backdrop-blur-sm">
-                                                <Trophy className="size-3 text-primary" />
-                                                {formatNumber(reward.points_cost)}{' '}
-                                                نقطة
-                                            </span>
-                                        </div>
-                                        <div className="flex flex-1 flex-col p-4">
-                                            <h3 className="text-base font-bold leading-snug text-foreground">
-                                                {reward.title}
-                                            </h3>
-                                            {reward.description ? (
-                                                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                                                    {reward.description}
-                                                </p>
-                                            ) : null}
-                                            <div className="mt-auto pt-4">
-                                                {isAuthed ? (
-                                                    <button
-                                                        type="button"
-                                                        disabled={
-                                                            !canAfford || busy
-                                                        }
-                                                        onClick={() =>
-                                                            handleRedeem(
-                                                                reward.id,
-                                                            )
-                                                        }
-                                                        className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
-                                                    >
-                                                        {busy ? (
-                                                            <span className="inline-block size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                                                        ) : null}
-                                                        استرداد
-                                                    </button>
-                                                ) : (
-                                                    <Link
-                                                        href={login()}
-                                                        className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                                                    >
-                                                        <LogIn className="size-4" />
-                                                        سجّل الدخول للاسترداد
-                                                    </Link>
-                                                )}
-                                                {isAuthed && !canAfford ? (
-                                                    <p className="mt-2 text-center text-xs text-muted-foreground">
-                                                        تحتاج{' '}
-                                                        {formatNumber(
-                                                            reward.points_cost -
-                                                                userPoints,
-                                                        )}{' '}
-                                                        نقطة إضافية
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                    </article>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-
-                {meta.total > 0 && meta.last_page > 1 ? (
-                    <nav
-                        className="mt-10 flex flex-col items-center gap-4 border-t border-border pt-10 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-6"
-                        aria-label="ترقيم صفحات المكافآت"
+                    </article>
+                    <div
+                        className="flex shrink-0 items-center justify-center py-0.5 sm:w-10 sm:py-0"
+                        aria-hidden
                     >
-                        {links.prev ? (
-                            <Link
-                                href={withRewardsSectionHash(links.prev)}
-                                preserveScroll={false}
-                                className="inline-flex min-w-28 items-center justify-center rounded-md border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                            >
-                                السابق
-                            </Link>
-                        ) : (
-                            <span className="inline-flex min-w-28 cursor-not-allowed items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold text-muted-foreground opacity-40">
-                                السابق
-                            </span>
-                        )}
-
-                        <p className="text-center text-sm text-muted-foreground">
-                            <span className="font-semibold tabular-nums text-foreground">
-                                صفحة {formatNumber(meta.current_page)} من{' '}
-                                {formatNumber(meta.last_page)}
-                            </span>
-                            {meta.from !== null && meta.to !== null ? (
-                                <span className="mt-1 block text-xs tabular-nums">
-                                    عرض {formatNumber(meta.from)}–
-                                    {formatNumber(meta.to)} من{' '}
-                                    {formatNumber(meta.total)}
-                                </span>
-                            ) : null}
-                        </p>
-
-                        {links.next ? (
-                            <Link
-                                href={withRewardsSectionHash(links.next)}
-                                preserveScroll={false}
-                                className="inline-flex min-w-28 items-center justify-center rounded-md border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                            >
-                                التالي
-                            </Link>
-                        ) : (
-                            <span className="inline-flex min-w-28 cursor-not-allowed items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-semibold text-muted-foreground opacity-40">
-                                التالي
-                            </span>
-                        )}
-                    </nav>
-                ) : null}
+                        <ChevronDown className="size-7 text-primary/55 sm:hidden" />
+                        <ChevronLeft
+                            className="hidden size-8 text-primary/55 sm:block"
+                            strokeWidth={2.25}
+                        />
+                    </div>
+                    <article className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 text-right shadow-sm sm:p-5">
+                        <strong className="block text-sm font-bold text-foreground">
+                            ما فائدتها؟
+                        </strong>
+                        <span className="mt-2 block text-sm leading-relaxed font-semibold text-muted-foreground">
+                            تحوّل نشاطك إلى مكافآت واضحة من شركاء المنصة في مكان
+                            واحد.
+                        </span>
+                    </article>
+                    <div
+                        className="flex shrink-0 items-center justify-center py-0.5 sm:w-10 sm:py-0"
+                        aria-hidden
+                    >
+                        <ChevronDown className="size-7 text-primary/55 sm:hidden" />
+                        <ChevronLeft
+                            className="hidden size-8 text-primary/55 sm:block"
+                            strokeWidth={2.25}
+                        />
+                    </div>
+                    <article className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 text-right shadow-sm sm:p-5">
+                        <strong className="block text-sm font-bold text-foreground">
+                            متى تستخدمها؟
+                        </strong>
+                        <span className="mt-2 block text-sm leading-relaxed font-semibold text-muted-foreground">
+                            عند ظهور مكافأة مناسبة زُرْ صفحة المكافآت واستبدل
+                            نقاطك مباشرة.
+                        </span>
+                    </article>
+                </div>
             </div>
         </section>
     );

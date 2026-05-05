@@ -18,13 +18,13 @@ import {
     destroy as destroyInitiative,
     update as updateInitiative,
 } from '@/actions/App/Http/Controllers/InitiativesController';
-import { confirmAttendance } from '@/actions/App/Http/Controllers/ParticipationsController';
 import { show as showInitiative } from '@/actions/App/Http/Controllers/InitiativesController';
+import { confirmAttendance } from '@/actions/App/Http/Controllers/ParticipationsController';
+import { SiteHeader } from '@/components/site-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { SiteHeader } from '@/components/site-header';
 import { JORDAN_CITIES } from '@/constants/jordan-cities';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -78,7 +78,10 @@ type PageProps = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const formatDate = (iso: string | null): string => {
-    if (!iso) return '—';
+    if (!iso) {
+return '—';
+}
+
     return new Intl.DateTimeFormat('ar-JO-u-nu-latn', {
         day: 'numeric',
         month: 'long',
@@ -87,7 +90,10 @@ const formatDate = (iso: string | null): string => {
 };
 
 const cityLabel = (city: string | null): string | null => {
-    if (!city) return null;
+    if (!city) {
+return null;
+}
+
     return JORDAN_CITIES.find((c) => c.value === city.toLowerCase())?.label ?? city;
 };
 

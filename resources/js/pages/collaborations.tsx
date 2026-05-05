@@ -685,8 +685,17 @@ export default function Collaborations({ sections }: { sections: Section[] }) {
                                 </div>
                             </div>
 
-                            <div className="rounded-4xl border border-border bg-card/80 p-5 shadow-sm ring-1 ring-primary/5 backdrop-blur">
-                                <div className="grid grid-cols-2 gap-3">
+                            <div className="relative overflow-hidden rounded-4xl border border-border bg-card/80 p-5 shadow-sm ring-1 ring-primary/5 backdrop-blur">
+                                <img
+                                    alt=""
+                                    src="/images/himma/waterway-restoration-team.jpg"
+                                    className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-35"
+                                />
+                                <div
+                                    aria-hidden
+                                    className="absolute inset-0 z-1 bg-linear-to-t from-background/95 via-background/75 to-background/40"
+                                />
+                                <div className="relative z-10 grid grid-cols-2 gap-3">
                                     <div className="rounded-3xl bg-primary p-5 text-primary-foreground">
                                         <p className="text-4xl font-black">
                                             {displaySections.length}

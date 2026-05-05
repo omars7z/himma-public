@@ -11,18 +11,7 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
-    private const REWARDS_PER_PAGE = 8;
-
     private const MOCK_CREATION_POINTS = 30;
-
-    /**
-     * معرّفات ثابتة من picsum.photos — روابط مباشرة وموثوقة للصور الاحتياطية.
-     *
-     * @var list<int>
-     */
-    private const REWARD_FALLBACK_PICSUM_IDS = [
-        292, 429, 431, 593, 668, 742, 829, 865, 988, 1019,
-    ];
 
     public function show(): Response
     {
@@ -61,6 +50,10 @@ class HomeController extends Controller
                 'creator_username' => $initiative->creator?->username,
                 'target_gender' => $initiative->target_gender,
                 'min_age' => $initiative->min_age,
+                'reviews_count' => (int) $initiative->reviews_count,
+                'reviews_average' => $initiative->reviews_average !== null
+                    ? round((float) $initiative->reviews_average, 1)
+                    : null,
                 'creation_points' => $initiative->creation_points,
                 'is_joined' => isset($joinedIds[$initiative->id]),
             ])
@@ -70,20 +63,20 @@ class HomeController extends Controller
             $featuredInitiatives = self::mockFeaturedInitiatives();
         }
 
-        $rewardsPaginator = Reward::query()
-            ->orderBy('points_cost')
-            ->paginate(self::REWARDS_PER_PAGE, ['*'], 'rewards_page')
-            ->withQueryString();
+        $rewardsTotal = Reward::query()->count();
 
-        $rewardsData = collect($rewardsPaginator->items())
-            ->map(fn (Reward $reward): array => [
-                'id' => $reward->id,
-                'title' => $reward->title,
-                'description' => $reward->description,
-                'points_cost' => $reward->points_cost,
-                'image_url' => self::resolveRewardImage($reward->image, $reward->id),
+        /** @var list<array{username: string, avatar_url: string, points: int, city: string|null}> */
+        $leaderboard = User::query()
+            ->select(['id', 'username', 'image', 'points', 'city'])
+            ->orderByDesc('points')
+            ->limit(5)
+            ->get()
+            ->map(fn (User $u): array => [
+                'username' => $u->username,
+                'avatar_url' => $u->avatar_url,
+                'points' => $u->points,
+                'city' => $u->city,
             ])
-            ->values()
             ->all();
 
         return Inertia::render('home', [
@@ -96,50 +89,9 @@ class HomeController extends Controller
                 'users_count' => User::query()->count(),
             ],
             'featuredInitiatives' => $featuredInitiatives,
-            'rewards' => [
-                'data' => $rewardsData,
-                'links' => [
-                    'prev' => $rewardsPaginator->previousPageUrl(),
-                    'next' => $rewardsPaginator->nextPageUrl(),
-                ],
-                'meta' => [
-                    'current_page' => $rewardsPaginator->currentPage(),
-                    'last_page' => $rewardsPaginator->lastPage(),
-                    'per_page' => $rewardsPaginator->perPage(),
-                    'total' => $rewardsPaginator->total(),
-                    'from' => $rewardsPaginator->firstItem(),
-                    'to' => $rewardsPaginator->lastItem(),
-                ],
-            ],
+            'leaderboard' => $leaderboard,
+            'rewardsTotal' => $rewardsTotal,
         ]);
-    }
-
-    private static function resolveRewardImage(?string $stored, int $rewardId): string
-    {
-        if (filled($stored) && self::isTrustedRemoteImageUrl($stored)) {
-            return $stored;
-        }
-
-        return self::fallbackRewardImageUrl($rewardId);
-    }
-
-    private static function fallbackRewardImageUrl(int $rewardId): string
-    {
-        $ids = self::REWARD_FALLBACK_PICSUM_IDS;
-        $picsumId = $ids[$rewardId % count($ids)];
-
-        return sprintf('https://picsum.photos/id/%d/800/600.jpg', $picsumId);
-    }
-
-    private static function isTrustedRemoteImageUrl(string $url): bool
-    {
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-            return false;
-        }
-
-        $scheme = parse_url($url, PHP_URL_SCHEME);
-
-        return in_array($scheme, ['http', 'https'], true);
     }
 
     /**
@@ -157,6 +109,8 @@ class HomeController extends Controller
      *     creator_username: string,
      *     target_gender: 'male'|'female'|null,
      *     min_age: int,
+     *     reviews_count: int,
+     *     reviews_average: float|null,
      *     creation_points: int,
      *     is_joined: bool
      * }>
@@ -178,6 +132,8 @@ class HomeController extends Controller
                 'creator_username' => 'himma_team',
                 'target_gender' => null,
                 'min_age' => 18,
+                'reviews_count' => 52,
+                'reviews_average' => 4.9,
                 'creation_points' => self::MOCK_CREATION_POINTS,
                 'is_joined' => false,
             ],
@@ -193,8 +149,10 @@ class HomeController extends Controller
                 'max_participants' => 30,
                 'participants_count' => 14,
                 'creator_username' => 'study_circle',
-                'target_gender' => null,
-                'min_age' => 18,
+                'target_gender' => 'female',
+                'min_age' => 16,
+                'reviews_count' => 12,
+                'reviews_average' => 4.2,
                 'creation_points' => self::MOCK_CREATION_POINTS,
                 'is_joined' => false,
             ],
@@ -210,8 +168,10 @@ class HomeController extends Controller
                 'max_participants' => 50,
                 'participants_count' => 22,
                 'creator_username' => 'green_jordan',
-                'target_gender' => null,
-                'min_age' => 18,
+                'target_gender' => 'male',
+                'min_age' => 21,
+                'reviews_count' => 28,
+                'reviews_average' => 3.9,
                 'creation_points' => self::MOCK_CREATION_POINTS,
                 'is_joined' => false,
             ],
@@ -228,7 +188,9 @@ class HomeController extends Controller
                 'participants_count' => 9,
                 'creator_username' => 'youth_hub',
                 'target_gender' => null,
-                'min_age' => 18,
+                'min_age' => 13,
+                'reviews_count' => 0,
+                'reviews_average' => null,
                 'creation_points' => self::MOCK_CREATION_POINTS,
                 'is_joined' => false,
             ],
@@ -245,7 +207,9 @@ class HomeController extends Controller
                 'participants_count' => 31,
                 'creator_username' => 'redsea_volunteers',
                 'target_gender' => null,
-                'min_age' => 18,
+                'min_age' => 25,
+                'reviews_count' => 101,
+                'reviews_average' => 5.0,
                 'creation_points' => self::MOCK_CREATION_POINTS,
                 'is_joined' => false,
             ],

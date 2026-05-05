@@ -27,21 +27,24 @@ export default function AuthSplitLayout({
     return (
         <div className="grid min-h-dvh lg:grid-cols-2">
             {/* ===== اللوحة اليسرى - الهيرو ===== */}
-            <div
-                className="relative hidden overflow-hidden lg:flex lg:flex-col"
-                style={{
-                    background:
-                        'linear-gradient(145deg, hsl(152,65%,18%) 0%, hsl(160,55%,12%) 55%, hsl(152,60%,7%) 100%)',
-                }}
-            >
+            <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
+                <img
+                    alt=""
+                    src="/images/himma/community-food-service.jpg"
+                    className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                />
+                <div
+                    aria-hidden
+                    className="absolute inset-0 z-1 bg-linear-to-br from-[hsl(152_65%_18%)]/92 via-[hsl(160_55%_12%)]/90 to-[hsl(152_60%_7%)]/95"
+                />
                 {/* زخارف خلفية */}
-                <div className="absolute -top-40 -left-40 h-112 w-md rounded-full bg-white/5 blur-3xl" />
-                <div className="absolute top-1/2 -right-28 h-80 w-80 rounded-full bg-white/[0.07] blur-2xl" />
-                <div className="absolute -bottom-28 left-1/3 h-96 w-96 rounded-full bg-[hsl(95,42%,44%)]/20 blur-3xl" />
+                <div className="absolute -top-40 -left-40 z-2 h-112 w-md rounded-full bg-white/5 blur-3xl" />
+                <div className="absolute top-1/2 -right-28 z-2 h-80 w-80 rounded-full bg-white/[0.07] blur-2xl" />
+                <div className="absolute -bottom-28 left-1/3 z-2 h-96 w-96 rounded-full bg-[hsl(95,42%,44%)]/20 blur-3xl" />
 
                 {/* أيقونة ورقة مائية ضخمة */}
                 <Leaf
-                    className="absolute right-4 -bottom-6 h-72 w-72 rotate-12 text-white/4"
+                    className="absolute right-4 -bottom-6 z-2 h-72 w-72 rotate-12 text-white/4"
                     strokeWidth={0.75}
                 />
 

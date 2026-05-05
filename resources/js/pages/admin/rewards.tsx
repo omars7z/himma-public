@@ -153,9 +153,11 @@ function RewardFormDialog({
             },
             onError: (errs) => {
                 const mapped: Partial<Record<keyof FormData, string>> = {};
+
                 for (const [k, v] of Object.entries(errs)) {
                     mapped[k as keyof FormData] = Array.isArray(v) ? v[0] : String(v);
                 }
+
                 setErrors(mapped);
             },
             onFinish: () => setBusy(false),
@@ -163,7 +165,11 @@ function RewardFormDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+        <Dialog open={open} onOpenChange={(v) => {
+ if (!v) {
+onClose();
+} 
+}}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg" dir="rtl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-base">
@@ -307,7 +313,11 @@ function DeleteConfirmDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+        <Dialog open={open} onOpenChange={(v) => {
+ if (!v) {
+onClose();
+} 
+}}>
             <DialogContent className="sm:max-w-sm" dir="rtl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-base text-destructive">

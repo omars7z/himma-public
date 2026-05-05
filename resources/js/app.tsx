@@ -14,6 +14,7 @@ createInertiaApp({
         if (name.startsWith('auth/')) {
             return AuthLayout;
         }
+
         return SiteChromeLayout;
     },
     strictMode: true,

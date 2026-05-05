@@ -54,6 +54,7 @@ export function initializeTheme(): void {
     }
 
     const raw = localStorage.getItem('appearance');
+
     if (raw === 'dark' || raw === 'light') {
         currentAppearance = normalizeAppearance(raw);
     } else {

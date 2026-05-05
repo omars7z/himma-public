@@ -13,16 +13,16 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { approve, reject } from '@/actions/App/Http/Controllers/Admin/AdminInitiativesController';
+import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Toaster } from '@/components/ui/sonner';
-import { approve, reject } from '@/actions/App/Http/Controllers/Admin/AdminInitiativesController';
-import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import AdminLayout from '@/layouts/admin-layout';
-import { toast } from 'sonner';
 
 type Initiative = {
     id: number;
@@ -53,7 +53,10 @@ const GENDER_LABELS: Record<string, string> = {
 };
 
 function formatDate(iso: string | null): string {
-    if (!iso) return '—';
+    if (!iso) {
+return '—';
+}
+
     return new Intl.DateTimeFormat('ar-JO', {
         year: 'numeric',
         month: 'short',
@@ -72,6 +75,7 @@ function StatusBadge({ status }: { status: string }) {
             </Badge>
         );
     }
+
     if (status === 'approved') {
         return (
             <Badge variant="outline" className="gap-1 border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-950 dark:text-green-400">
@@ -80,6 +84,7 @@ function StatusBadge({ status }: { status: string }) {
             </Badge>
         );
     }
+
     return (
         <Badge variant="outline" className="gap-1 border-destructive/40 bg-destructive/5 text-destructive">
             <XCircle className="size-3" />

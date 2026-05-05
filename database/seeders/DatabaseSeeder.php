@@ -21,9 +21,9 @@ class DatabaseSeeder extends Seeder
             'points' => 0,
         ]);
 
-        $users = User::factory(20)->create();
+        $this->call(JordanianPeopleSeeder::class);
 
-        $allUsers = $users->push($admin);
+        $allUsers = User::query()->get();
 
         Initiative::factory(15)->approved()->recycle($allUsers)->create();
         Initiative::factory(15)->recycle($allUsers)->create();

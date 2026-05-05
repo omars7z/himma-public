@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'max_participants',
     'created_by',
     'creation_points',
+    'reviews_count',
+    'reviews_average',
     'status',
 ])]
 class Initiative extends Model
@@ -35,6 +37,8 @@ class Initiative extends Model
             'min_participants' => 'integer',
             'max_participants' => 'integer',
             'creation_points' => 'integer',
+            'reviews_count' => 'integer',
+            'reviews_average' => 'float',
             'latitude' => 'float',
             'longitude' => 'float',
         ];

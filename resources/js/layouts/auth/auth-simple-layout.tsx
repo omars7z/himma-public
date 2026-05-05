@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { AppearanceToggle } from '@/components/appearance-toggle';
 import AppLogoIcon from '@/components/app-logo-icon';
+import { AppearanceToggle } from '@/components/appearance-toggle';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 

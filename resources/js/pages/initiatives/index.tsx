@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     AlertTriangle,
+    ArrowDownWideNarrow,
     ArrowLeft,
     ArrowRight,
     CalendarDays,
@@ -10,6 +11,7 @@ import {
     HandHeart,
     MapPin,
     Plus,
+    Star,
     Trophy,
     UserCheck,
     UserMinus,
@@ -17,30 +19,39 @@ import {
     X,
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { store as storeInitiative } from '@/actions/App/Http/Controllers/InitiativesController';
+import {
+    show as showInitiative,
+    index as indexInitiatives,
+} from '@/actions/App/Http/Controllers/InitiativesController';
 import {
     store,
     destroy,
 } from '@/actions/App/Http/Controllers/ParticipationsController';
+import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
 import type { InitiativePin } from '@/components/jordan-map';
 import { SiteHeader } from '@/components/site-header';
-import { JORDAN_CITIES } from '@/constants/jordan-cities';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { JORDAN_CITIES } from '@/constants/jordan-cities';
 import {
-    show as showInitiative,
-    index as indexInitiatives,
-} from '@/actions/App/Http/Controllers/InitiativesController';
-import { showUser } from '@/actions/App/Http/Controllers/ProfileController';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
+    INITIATIVE_SORT_OPTIONS,
+    sortInitiatives
+    
+} from '@/lib/initiative-sort';
+import type {InitiativeSortKey} from '@/lib/initiative-sort';
 
 const JordanMap = lazy(async () => {
-    if (typeof window === 'undefined') return { default: () => <></> };
+    if (typeof window === 'undefined') {
+return { default: () => <></> };
+}
+
     return import('@/components/jordan-map').then((m) => ({ default: m.JordanMap }));
 });
 
@@ -59,6 +70,8 @@ type Initiative = {
     creator_avatar_url: string | null;
     target_gender: 'male' | 'female' | null;
     min_age: number | null;
+    reviews_average: number | null;
+    reviews_count: number;
     creation_points: number;
     is_joined: boolean;
 };
@@ -84,7 +97,10 @@ const formatNumber = (value: number): string =>
     new Intl.NumberFormat('en-US').format(value);
 
 const formatArabicDate = (iso: string | null): string => {
-    if (!iso) return 'موعد قريب';
+    if (!iso) {
+return 'موعد قريب';
+}
+
     return new Intl.DateTimeFormat('ar-JO-u-nu-latn', {
         weekday: 'long',
         day: 'numeric',
@@ -129,13 +145,24 @@ export default function InitiativesIndex({
                     {/* Hero شريط صغير */}
                     <div className="border-b border-border bg-linear-to-b from-initiative-surface/70 via-background to-background">
                         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6">
-                            <div className="min-w-0">
+                            <div className="flex min-w-0 flex-1 items-center gap-5 sm:gap-6">
+                                <div className="min-w-0 flex-1">
                                 <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
                                     المبادرات
                                 </h1>
                                 <p className="mt-1 text-sm text-muted-foreground">
                                     استكشف مبادرات تطوعية أو أنشئ مبادرتك الخاصة
                                 </p>
+                                </div>
+                                <div className="hidden shrink-0 overflow-hidden rounded-2xl border border-border shadow-md sm:block sm:h-28 sm:w-44 md:h-32 md:w-52">
+                                    <img
+                                        alt=""
+                                        src="/images/himma/community-cleanup-team.jpg"
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
                             </div>
 
                             <div className="relative shrink-0 sm:max-w-[min(100%,20rem)]">
@@ -282,68 +309,98 @@ function BrowseSection({
     >(null);
     const [joinConfirming, setJoinConfirming] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [sortKey, setSortKey] = useState<InitiativeSortKey>('starts_at_asc');
 
     const filteredInitiatives = useMemo(() => {
         return initiatives.filter((i) => {
-            if (selectedCity && i.city?.toLowerCase() !== selectedCity)
-                return false;
+            if (selectedCity && i.city?.toLowerCase() !== selectedCity) {
+return false;
+}
+
             if (genderFilter !== 'all') {
                 if (
                     i.target_gender !== null &&
                     i.target_gender !== genderFilter
-                )
-                    return false;
+                ) {
+return false;
+}
             }
+
             if (ageFilter !== 'all') {
                 const minRequired = Number(ageFilter);
-                if (i.min_age !== null && i.min_age > minRequired) return false;
+
+                if (i.min_age !== null && i.min_age > minRequired) {
+return false;
+}
             }
+
             return true;
         });
     }, [initiatives, selectedCity, genderFilter, ageFilter]);
 
+    const filteredSortedInitiatives = useMemo(
+        () => sortInitiatives(filteredInitiatives, sortKey),
+        [filteredInitiatives, sortKey],
+    );
+
     const filteredCityCounts = useMemo(() => {
         const counts: Record<string, number> = {};
+
         for (const initiative of filteredInitiatives) {
             const key = initiative.city?.toLowerCase() ?? '';
-            if (key) counts[key] = (counts[key] ?? 0) + 1;
+
+            if (key) {
+counts[key] = (counts[key] ?? 0) + 1;
+}
         }
+
         return counts;
     }, [filteredInitiatives]);
 
     const selectedInitiative = useMemo(
         () =>
-            filteredInitiatives.find((i) => i.id === selectedInitiativeId) ??
+            filteredSortedInitiatives.find((i) => i.id === selectedInitiativeId) ??
             null,
-        [filteredInitiatives, selectedInitiativeId],
+        [filteredSortedInitiatives, selectedInitiativeId],
     );
 
     const cityInitiatives = useMemo(() => {
-        if (!selectedCity) return [];
-        return filteredInitiatives.filter(
+        if (!selectedCity) {
+return [];
+}
+
+        return filteredSortedInitiatives.filter(
             (i) => i.city?.toLowerCase() === selectedCity,
         );
-    }, [filteredInitiatives, selectedCity]);
+    }, [filteredSortedInitiatives, selectedCity]);
 
     const initiativePins: InitiativePin[] = useMemo(
         () =>
-            filteredInitiatives.map((i) => ({
+            filteredSortedInitiatives.map((i) => ({
                 id: i.id,
                 name: i.name,
                 city: i.city,
                 latitude: i.latitude,
                 longitude: i.longitude,
                 is_joined: i.is_joined,
+                full:
+                    i.max_participants !== null &&
+                    i.max_participants > 0 &&
+                    i.participants_count >= i.max_participants,
             })),
-        [filteredInitiatives],
+        [filteredSortedInitiatives],
     );
 
     const hasActiveFilters =
         selectedCity !== null || genderFilter !== 'all' || ageFilter !== 'all';
 
     function handleMapInitiativeSelect(id: number) {
-        const initiative = filteredInitiatives.find((i) => i.id === id);
-        if (!initiative) return;
+        const initiative = filteredSortedInitiatives.find((i) => i.id === id);
+
+        if (!initiative) {
+return;
+}
+
         setSelectedCity(initiative.city?.toLowerCase() ?? null);
         setSelectedInitiativeId(id);
         setJoinConfirming(false);
@@ -467,6 +524,31 @@ function BrowseSection({
                                     {opt.label}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    <div className="h-5 w-px bg-border" />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                            <ArrowDownWideNarrow className="size-3.5 shrink-0" />
+                            الترتيب
+                        </span>
+                        <div className="relative">
+                            <select
+                                value={sortKey}
+                                onChange={(e) =>
+                                    setSortKey(e.target.value as InitiativeSortKey)
+                                }
+                                className="appearance-none rounded-lg border border-border bg-background py-1.5 pr-3 pl-7 text-sm font-medium text-foreground focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                            >
+                                {INITIATIVE_SORT_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         </div>
                     </div>
 
@@ -680,6 +762,15 @@ function InitiativesPanel({
                                         )}{' '}
                                         نقطة
                                     </span>
+                                    {initiative.reviews_count > 0 &&
+                                    initiative.reviews_average !== null ? (
+                                        <span className="flex items-center gap-0.5 text-primary tabular-nums">
+                                            <Star className="size-3 shrink-0 fill-primary/25 text-primary" />
+                                            {Number(
+                                                initiative.reviews_average,
+                                            ).toFixed(1)}
+                                        </span>
+                                    ) : null}
                                 </div>
                             </button>
                         </li>
@@ -776,6 +867,22 @@ function InitiativeDetail({
                             نقطة للحضور
                         </span>
                     </div>
+
+                    {initiative.reviews_count > 0 &&
+                    initiative.reviews_average !== null ? (
+                        <div className="flex items-center gap-2">
+                            <Star className="size-3.5 shrink-0 fill-primary/25 text-primary" />
+                            <span>
+                                <span className="font-bold tabular-nums text-foreground">
+                                    {Number(initiative.reviews_average).toFixed(
+                                        1,
+                                    )}
+                                </span>{' '}
+                                — {formatNumber(initiative.reviews_count)}{' '}
+                                تقييم
+                            </span>
+                        </div>
+                    ) : null}
 
                     <div>
                         <div className="flex items-center justify-between">
@@ -1104,6 +1211,7 @@ function StatusBadgeIcon({ status }: { status: string }) {
             </span>
         );
     }
+
     return (
         <span className="grid size-12 place-items-center rounded-xl bg-muted">
             <Clock className="size-6 text-muted-foreground" />
@@ -1129,6 +1237,7 @@ function ParticipationStatusBadge({
             </span>
         );
     }
+
     return (
         <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             <Clock className="size-3" />
@@ -1159,7 +1268,9 @@ function CreateInitiativeDialog({
     });
 
     useEffect(() => {
-        if (!open) reset();
+        if (!open) {
+reset();
+}
     }, [open]);
 
     function handleSubmit(e: React.FormEvent) {
